@@ -22,33 +22,31 @@ const concatData = (slicedDataMap, segLen=256) => {
 };
 
 const send = (socket, encryptFunc, data, type='data') => {
+    if(!data) {
+        data = '\0';
+    }
+
     const slicedData = splitData(data);
     const slicedNum = slicedData.length;
+    let encryptedData = [];
 
     if(slicedNum > 1) {
         print(`Data is too long! The data is splited into ${slicedNum} parts.\n`, 'red');
-
-        // slice the data into several parts 
-        // if the data is too long, then the encryption will fail
         for(let i = 0; i < slicedNum; i++) {
-            const dataToSend = JSON.stringify({
-                data: slicedData[i],
-                type: type,
-                seg_no: i+1,
-                seg_num: slicedNum
-            })
-            socket.write(encryptFunc(dataToSend));
-            print(`Part ${i+1} has been sent.\n`, 'yellow');
+            const encryptedPartData = encryptFunc(slicedData[i]).toString('hex');
+            encryptedData.push(encryptedPartData);
         }
     } else {
-        const dataToSend = JSON.stringify({
-            data: slicedData[0],
-            type: type,
-            seg_no: 1,
-            seg_num: 1
-        })
-        socket.write(encryptFunc(dataToSend));
+        const encryptedPartData = encryptFunc(slicedData[0]).toString('hex');
+        encryptedData.push(encryptedPartData);
     }
+
+    const dataToSend = JSON.stringify({
+        data: encryptedData,
+        type: type,
+    });
+
+    socket.write(dataToSend);
     print(`All the data has been sent.\n`, 'yellow');
 };
 

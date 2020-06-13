@@ -1,6 +1,7 @@
 const readline = require('readline');
 const net = require('net');
-const { print } = require('./colors.js');
+const fs = require('fs');
+const { addColor, print } = require('./colors.js');
 const {
     encryptPriv,
     decryptPriv,
@@ -29,38 +30,38 @@ const getClient = (privKey, passphrase) => {
     const encrypt = getClientEncrypt(privKey, passphrase);
     const decrypt = getClientDecrypt(privKey, passphrase);
 
-    let dataReceivedMap = new Map();
+    // let dataReceivedMap = new Map();
     client.on('data', (d) => {
         print('\n--------\n');
         print(`Received encrypted data from server\n`, 'green');
         print('Encrypted: ', 'yellow');
-        print(`${d.toString('hex')}\n`);
+        print(`${d.toString()}\n`);
 
-        const decryptedJSON = decrypt(d);
-        const decryptedData = JSON.parse(decryptedJSON);
+        const parsedData = JSON.parse(d);
+        const messageType = parsedData.type;
 
         print('Message Type: ', 'yellow');
-        print(`${decryptedData.type}\n`);
+        print(`${messageType}\n`);
 
         print('Message length: ', 'yellow');
-        print(`${decryptedJSON.length}\n`);
+        print(`${d.length}\n`);
+
+        let restoredData = '';
+        for(let each of parsedData.data) {
+            const dataBuf = Buffer.from(each, 'hex');
+            restoredData += decrypt(dataBuf).toString();
+        }
 
         print('Data length: ', 'yellow');
-        print(`${decryptedData.data.length}\n`);
+        print(`${restoredData.length}\n`);
 
-        print(`Segment: ${decryptedData.seg_no} of ${decryptedData.seg_num}\n`, 'red');
-        print('--------\n\n');
-
-        dataReceivedMap.set(decryptedData.seg_no, decryptedData.data);
-        if(decryptedData.seg_no === decryptedData.seg_num) {
-            const concatedData = concatData(dataReceivedMap);
-            dataReceivedMap = new Map();
-
-            print('\n--------\n');
-            print('Decrypted: ', 'yellow');
-            print(`${concatedData}\n`);
-            print('--------\n\n');
+        if(messageType === 'data') {
+            print('Decrypted Data: ', 'yellow');
+        } else if(messageType === 'random-bytes') {
+            print('Decrypted Random Bytes: ', 'yellow');
         }
+        print(`${restoredData}\n`);
+        print('--------\n\n');
     });
     
 
@@ -76,6 +77,12 @@ const getClient = (privKey, passphrase) => {
     rl.on('close', () => {
         print('Bye!\n', 'yellow');
     });
+
+    client.sendFile = (fileDir) => {
+        const fileData = fs.readFileSync(fileDir).toString();
+        console.log(fileData)
+        send(client, encrypt, fileData, type='file');
+    };
 
     return client;
 };

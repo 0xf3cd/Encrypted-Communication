@@ -18,6 +18,7 @@ program
     .option('-privk --privatekey [privatekey', 'Specify the dir to private key')
     .option('-ip, --ip [ip]', 'For clients, specify server ip address to connect [ip]')
     .option('-p, --port [port]', 'Specify the port to connect to or listen on', '8000')
+    .option('-fd --filedir [filedir]', 'Specify the file to be sent')
     .parse(process.argv);
 
 if(program.server) {
@@ -41,6 +42,11 @@ if(program.server) {
     const { privKey, passphrase } = loadPrivateKey();
     const client = getClient(privKey, passphrase);
     client.connect({ port: parseInt(program.port), host: program.ip });
+
+    if(program.filedir) {
+        client.sendFile(program.filedir);
+    }
+
 } else {
     throw 'Please specify the mode to work on (-c/--client or -s/--server)';
 }
