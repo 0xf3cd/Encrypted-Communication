@@ -5,6 +5,8 @@ const addColor = (str, color='no') => {
         'g': '\033[32m',
         'yellow': '\033[33m',
         'y': '\033[33m',
+        'red': '\033[31m',
+        'r': '\033[31m',
     };
 
     if(color == 'no') {

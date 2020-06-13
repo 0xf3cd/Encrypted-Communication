@@ -30,10 +30,10 @@ const genRandomBytes = (len) => {
 };
 
 // Generate passphrase and keys
-const generateKeys = (dir='.') => {
+const generateKeys = (dir='.', modulusLength=4096) => {
     const randomPassPhrase = genRandomBytes(32).toString('hex');
     const keys = crypto.generateKeyPairSync('rsa', {
-        modulusLength: 4096,
+        modulusLength: modulusLength,
         publicKeyEncoding: {
           type: 'spki',
           format: 'pem'
