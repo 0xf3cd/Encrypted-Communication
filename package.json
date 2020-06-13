@@ -1,0 +1,22 @@
+{
+  "name": "encrypted-communication",
+  "version": "1.0.0",
+  "description": "Use Node.js to build a encrypted server-client communication example",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xf3cd/Encrypted-Communication.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/0xf3cd/Encrypted-Communication/issues"
+  },
+  "homepage": "https://github.com/0xf3cd/Encrypted-Communication#readme",
+  "dependencies": {
+    "commander": "^5.1.0"
+  }
+}
