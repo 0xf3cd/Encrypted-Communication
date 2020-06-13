@@ -24,18 +24,18 @@ program
     .option('-pp, --passphrase [passphrase]', 'Specify the dir to passphrase')
     .option('-pubk --publickey [publickey]', 'Specify the dir to public key')
     .option('-privk --privatekey [privatekey', 'Specify the dir to private key')
-    .option('-ip, --ip [ip]', 'For clients, specify server ip address to connect [ip]', '127.0.0.1')
+    .option('-ip, --ip [ip]', 'For clients, specify server ip address to connect [ip]')
     .option('-p, --port [port]', 'Specify the port to connect to or listen on', '8000')
     .parse(process.argv);
 
 if(program.server) {
     if(!program.port) {
-        throw 'Please specify the port to listen on (-p/--port)';
+        throw addColor('Please specify the port to listen on (-p/--port)', 'green');
     }
     const pubKey = loadPublicKey();
     const server = net.createServer((c) => {
         c.on('end', () => {
-            console.log(`Client disconnected, ip: ${c.ip}`);
+            console.log(`Client disconnected, ip: ${c.remoteAddress}`);
         });
         c.on('data', (d) => {
             print('\n--------\n');
@@ -57,30 +57,43 @@ if(program.server) {
     });
       
     server.listen(parseInt(program.port), () => {
-        print(`Server listening on ${program.port}`);
+        print(`Server listening on ${program.port}\n`);
     });
 } else if(program.client) {
     if(!program.ip) {
-        throw 'Please specify the ip to connect (-ip/--ip)';
+        throw addColor('Please specify the ip to connect (-ip/--ip)', 'green');
     }
     if(!program.port) {
-        throw 'Please specify the port to listen on (-p/--port)';
+        throw addColor('Please specify the port to listen on (-p/--port)', 'green');
     }
+
+    const { privKey, passphrase } = loadPrivateKey();
+
+    const client = new net.Socket();
+    client.connect({ port: parseInt(program.port), host: program.ip });
+    client.on('data', (d) => {
+        // console.log(data.toString('utf-8'));
+        print('\n--------\n');
+        print(`Received encrypted data from server\n`, 'green');
+        print('Encrypted: ', 'yellow');
+        print(`${d.toString('hex')}\n`);
+        print('Decrypted: ', 'yellow');
+        print(`${decryptPriv(privKey, passphrase, d)}\n`);
+        print('--------\n');
+    });
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     });
     
     rl.on('line', (input) => {
-        const encryptedInput = encrypt(pubKey, input);
-        const decryptedInput = decrypt(privKey, passphrase, encryptedInput);
-        console.log(`${addColor('Received', 'green')}: ${input}`);
-        console.log(`${addColor('Encrypted', 'green')}: ${encryptedInput.toString('hex')}`);
-        console.log(`${addColor('Decrypted', 'green')}: ${decryptedInput}`);
+        const encryptedInput = encryptPriv(privKey, passphrase, input);
+        client.write(encryptedInput);
     });
     
     rl.on('close', () => {
-        console.log(`${addColor(`PID-${process.pid} said`, 'yellow')}: Bye!`);
+        print('Bye!', 'yellow');
     });
 } else {
     throw 'Please specify the mode to work on (-c/--client or -s/--server)';
