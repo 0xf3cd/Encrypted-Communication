@@ -1,10 +1,8 @@
-const readline = require('readline');
 const WebSocket = require('ws');
-const fs = require('fs');
 const { addColor, print, printSys } = require('./colors.js');
 const {
     encryptPriv,
-    decryptPriv,
+    decryptPriv
 } = require('./encrypt.js');
 const {
     send,
@@ -27,7 +25,7 @@ const getClientDecrypt = (privKey, passphrase) => {
 };
 
 const getClient = (privKey, passphrase, host, port) => {
-    const client = new WebSocket(`ws://${host}:${port}`);
+    let client = new WebSocket(`ws://${host}:${port}`);
     const encrypt = getClientEncrypt(privKey, passphrase);
     const decrypt = getClientDecrypt(privKey, passphrase);
 
@@ -67,29 +65,20 @@ const getClient = (privKey, passphrase, host, port) => {
             chunkMap.delete(reqID);
         }
     });
-    
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-    
-    rl.on('line', (input) => {
-        if(input === 'test') {
-            send(client, encrypt, 'a'.repeat(65536));
-        } else {
-            send(client, encrypt, input);
-        }
-    });
-    
-    rl.on('close', () => {
-        print('Bye!\n', 'yellow');
-    });
 
-    client.sendFile = (fileDir) => {
-        const fileData = fs.readFileSync(fileDir).toString();
-        console.log(fileData);
-        send(client, encrypt, fileData, type='file');
+    client.mySend = (data, type='data') => {
+        send(client, encrypt, data, type=type);
     };
+
+    // reconnect to the server when losing the connection
+    client.on('close', () => {
+        print(`Lost the connection to the server!!!!\n`, 'red');
+        print(`Trying to reconnect in 3 seconds! So don't worry!\n`);
+        setTimeout(() => {
+            client.terminate();
+            client = getClient(privKey, passphrase, host, port);
+        }, 3000);
+    });
 
     return client;
 };

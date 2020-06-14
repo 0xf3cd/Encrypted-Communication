@@ -6,8 +6,11 @@ const program = require('commander');
 const { addColor, print } = require('./colors.js');
 const {
     loadPublicKey,
-    loadPrivateKey
+    loadPrivateKey,
+    genRandomBytes
 } = require('./encrypt.js');
+const readline = require('readline');
+const fs = require('fs');
 
 program
     .version('0.1.0')
@@ -18,7 +21,7 @@ program
     .option('-privk --privatekey [privatekey', 'Specify the dir to private key')
     .option('-ip, --ip [ip]', 'For clients, specify server ip address to connect [ip]')
     .option('-p, --port [port]', 'Specify the port to connect to or listen on', '8000')
-    .option('-fd --filedir [filedir]', 'Specify the file to be sent')
+    // .option('-fd --filedir [filedir]', 'Specify the file to be sent')
     .parse(process.argv);
 
 if(program.server) {
@@ -42,11 +45,27 @@ if(program.server) {
 
     const { privKey, passphrase } = loadPrivateKey();
     const client = getClient(privKey, passphrase, program.ip, program.port);
-    // client.connect({ port: parseInt(), host:  });
-
-    if(program.filedir) {
-        client.sendFile(program.filedir);
-    }
+    
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    
+    rl.on('line', (input) => {
+        if(input === 'test') {
+            client.mySend(genRandomBytes(65536*16).toString('base64'), type='test');
+        } else if(input === 'file') {
+            const fileContent = fs.readFileSync('./server.js');
+            client.mySend(fileContent, type='file');
+        } else {
+            client.mySend(input, type='data');
+        }
+    });
+    
+    rl.on('close', () => {
+        print('Bye!\n', 'yellow');
+    });
+    return rl;
 
 } else {
     throw 'Please specify the mode to work on (-c/--client or -s/--server)';

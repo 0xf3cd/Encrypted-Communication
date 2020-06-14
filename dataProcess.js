@@ -1,6 +1,7 @@
 const { print } = require('./colors.js');
 const { genRandomBytes } = require('./encrypt.js');
 const zlib = require('zlib');
+const cp = require('child_process');
 
 const MAX_BLK_NUM = 65536 / 512 - 1;
 const compAlg = zlib.deflateRawSync;
@@ -115,14 +116,6 @@ const processDataServer = (head, chunks, decrypt) => {
         decryptedData.push(decrypt(dataSlice));
     }
 
-    // console.log(decryptedData);
-    // let decryptedDataStr = '';
-    // for(let each of decryptedData) {
-    //     decryptedDataStr += each.toString();
-    // }
-    // if(head.use_deflate) {
-    //     decryptedDataStr = decompAlg(decryptedDataStr);
-    // }
     let decryptedDataBuf = Buffer.concat(decryptedData);
     let decryptedDataStr = '';
     if(head.use_compress) {
