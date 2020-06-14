@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/0xf3cd/Encrypted-Communication#readme",
   "dependencies": {
-    "commander": "^5.1.0"
+    "commander": "^5.1.0",
+    "ws": "^7.3.0"
   }
 }

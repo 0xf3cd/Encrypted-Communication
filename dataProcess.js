@@ -66,7 +66,7 @@ const send = (socket, encryptFunc, data, type='data', use_compress=true) => {
         
         const bufToSend = Buffer.concat(encryptedData, encryptedData.length*512);
         print(`Encrtyped Data Frame Length: ${bufToSend.length}\n`, 'yellow');
-        socket.write(bufToSend);
+        socket.send(bufToSend);
     } else {
         const segNum = Math.ceil(slicedNum/MAX_BLK_NUM);
         print(`Data is too long! The data is sent in ${segNum} segments.\n`, 'red');
@@ -91,7 +91,7 @@ const send = (socket, encryptFunc, data, type='data', use_compress=true) => {
             
             const bufToSend = Buffer.concat(segEncryptedData, segEncryptedData.length*512);
             print(`Encrtyped Data Frame Length: ${bufToSend.length}\n`, 'yellow');
-            socket.write(bufToSend);    
+            socket.send(bufToSend); 
         }
     }
 

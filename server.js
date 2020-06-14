@@ -1,4 +1,4 @@
-const net = require('net');
+const WebSocket = require('ws');
 const { addColor, print, printSys } = require('./colors.js');
 const {
     encryptPub,
@@ -25,21 +25,23 @@ const getServerDecrypt = (pubKey) => {
     return decrypt;
 };
 
-const getServer = (pubKey) => {
+const getServer = (pubKey, port) => {
     const encrypt = getServerEncrypt(pubKey);
     const decrypt = getServerDecrypt(pubKey);
 
-    const server = net.createServer((c) => {
+    const server = new WebSocket.Server({ port: port});
+    server.on('connection', (c, req) => {
         // let dataReceivedMap = new Map();
+        const clientIP = req.socket.remoteAddress;
 
-        c.on('end', () => {
-            console.log(`Client disconnected, ip: ${c.remoteAddress}`);
+        c.on('close', () => {
+            console.log(`Client disconnected, ip: ${clientIP}`);
         });
 
         const chunkMap = new Map();
-        c.on('data', (d) => {
+        c.on('message', (d) => {
             print('\n--------\n');
-            print(`Received encrypted data from ${c.remoteAddress}\n`, 'green');
+            print(`Received encrypted data from ${clientIP}\n`, 'green');
             print('Encrypted: ', 'yellow');
             print(`${d.toString('base64')}\n`);
 
@@ -78,7 +80,7 @@ const getServer = (pubKey) => {
 
         // Say hi to client!
         const randomBytes = genRandomBytes(64).toString('hex');
-        print(`Client connected, from ${c.remoteAddress}\n`);
+        print(`Client connected, from ${req.socket.remoteAddress}\n`);
         print(`Random string: `, 'green');
         print(`${randomBytes}\n`);
          

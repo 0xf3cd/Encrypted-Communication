@@ -27,10 +27,11 @@ if(program.server) {
     }
 
     const pubKey = loadPublicKey();
-    const server = getServer(pubKey);
-    server.listen(parseInt(program.port), () => {
-        print(`Server listening on ${program.port}\n`);
-    });
+    const server = getServer(pubKey, parseInt(program.port));
+    print(`Server listening on ${program.port}\n`);
+    // server.listen(parseInt(program.port), () => {
+    //     
+    // });
 } else if(program.client) {
     if(!program.ip) {
         throw addColor('Please specify the ip to connect (-ip/--ip)', 'green');
@@ -40,8 +41,8 @@ if(program.server) {
     }
 
     const { privKey, passphrase } = loadPrivateKey();
-    const client = getClient(privKey, passphrase);
-    client.connect({ port: parseInt(program.port), host: program.ip });
+    const client = getClient(privKey, passphrase, program.ip, program.port);
+    // client.connect({ port: parseInt(), host:  });
 
     if(program.filedir) {
         client.sendFile(program.filedir);

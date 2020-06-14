@@ -1,5 +1,5 @@
 const readline = require('readline');
-const net = require('net');
+const WebSocket = require('ws');
 const fs = require('fs');
 const { addColor, print, printSys } = require('./colors.js');
 const {
@@ -26,13 +26,13 @@ const getClientDecrypt = (privKey, passphrase) => {
     return decrypt;
 };
 
-const getClient = (privKey, passphrase) => {
-    const client = new net.Socket();
+const getClient = (privKey, passphrase, host, port) => {
+    const client = new WebSocket(`ws://${host}:${port}`);
     const encrypt = getClientEncrypt(privKey, passphrase);
     const decrypt = getClientDecrypt(privKey, passphrase);
 
     const chunkMap = new Map();
-    client.on('data', (d) => {
+    client.on('message', (d) => {
         print('\n--------\n');
         print(`Received encrypted data from server\n`, 'green');
         print('Encrypted: ', 'yellow');
