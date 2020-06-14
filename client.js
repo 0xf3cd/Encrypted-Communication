@@ -6,9 +6,9 @@ const {
 } = require('./encrypt.js');
 const {
     send,
-    MAX_BLK_NUM,
-    processDataClient
+    MAX_BLK_NUM
 } = require('./dataProcess.js');
+const zlib = require('zlib');
 
 const getClientEncrypt = (privKey, passphrase) => {
     const encrypt = (data) => {
@@ -22,6 +22,38 @@ const getClientDecrypt = (privKey, passphrase) => {
         return decryptPriv(privKey, passphrase, data);
     };
     return decrypt;
+};
+
+const processDataClient = (head, chunks, decrypt) => {
+    print('\n--------\n');
+    print(`Received All Data of req_id `);
+    print(`${head.req_id}\n`, 'red');
+    print(`Received Data is of Type `);
+    print(`${head.type}\n`, 'red');
+
+    const chunkSize = chunks.size;
+
+    const decryptedData = [];
+    for(let i = 1; i <= chunkSize; i++) {
+        const dataSlice = chunks.get(i);
+        decryptedData.push(decrypt(dataSlice));
+    }
+
+    // let decryptedDataStr = '';
+    // for(let each of decryptedData) {
+    //     decryptedDataStr += each.toString();
+    // }
+    let decryptedDataBuf = Buffer.concat(decryptedData);
+    let decryptedDataStr = '';
+    if(head.use_compress) {
+        decryptedDataStr = zlib.inflateRawSync(decryptedDataBuf).toString();
+    } else {
+        decryptedDataStr = decryptedDataBuf.toString();
+    }
+
+    print('Decrypted Data: ', 'yellow');
+    print(`${decryptedDataStr}\n`);
+    print('--------\n\n');
 };
 
 const getClient = (privKey, passphrase, host, port, emitter) => {

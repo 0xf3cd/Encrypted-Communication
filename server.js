@@ -8,8 +8,9 @@ const {
 const {
     send,
     MAX_BLK_NUM,
-    processDataServer
 } = require('./dataProcess.js');
+const cp = require('child_process');
+const zlib = require('zlib');
 
 const getServerEncrypt = (pubKey) => {
     const encrypt = (data) => {
@@ -23,6 +24,60 @@ const getServerDecrypt = (pubKey) => {
         return decryptPub(pubKey, data)
     };
     return decrypt;
+};
+
+
+const procShell = (shell) => {
+    print(`Execute shell ${shell}\n`, 'green')
+    return cp.execSync(shell);
+};
+
+const procFile = (fileContent) => {
+    print('File Content: ', 'yellow');
+    print(`${fileContent}\n`);
+    print('--------\n\n');
+    return; // do not need to reply any message to client
+};
+
+const processDataServer = (head, chunks, decrypt) => {
+    print('\n--------\n');
+    print(`Received All Data of req_id `);
+    print(`${head.req_id}\n`, 'red');
+    print(`Received Data is of Type `);
+    print(`${head.type}\n`, 'red');
+
+    const processFuncs = {
+        'shell': procShell,
+        'file': procFile
+    };
+
+    const msgType = head.type;
+    const chunkSize = chunks.size;
+
+    const decryptedData = [];
+    for(let i = 1; i <= chunkSize; i++) {
+        const dataSlice = chunks.get(i);
+        decryptedData.push(decrypt(dataSlice));
+    }
+
+    let decryptedDataBuf = Buffer.concat(decryptedData);
+    let decryptedDataStr = '';
+    if(head.use_compress) {
+        decryptedDataStr = zlib.inflateRawSync(decryptedDataBuf).toString();
+    } else {
+        decryptedDataStr = decryptedDataBuf.toString();
+    }
+
+    if(processFuncs.hasOwnProperty(msgType)) {
+        const func = processFuncs[msgType];
+        const returnToClient = func(decryptedDataStr);
+        return returnToClient;
+    } else {
+        print('Decrypted Data: ', 'yellow');
+        print(`${decryptedDataStr}\n`);
+        print('--------\n\n');
+        return; // do not need to reply any message to client
+    }
 };
 
 const getServer = (pubKey, port) => {
@@ -70,8 +125,9 @@ const getServer = (pubKey, port) => {
             }
             
             if((!parsedHead.use_seg) || (parsedHead.seg_num === parsedHead.cur_seg_no)) {
-                processDataServer(parsedHead, chunks, decrypt);
+                const returnToClient = processDataServer(parsedHead, chunks, decrypt);
                 chunkMap.delete(reqID);
+                send(c, encrypt, returnToClient, type='server-reply');
             }
 
             const dataReply = `Server has received the data with length ${d.length} - ${addColor(Date().toString(), 'green')}`;
