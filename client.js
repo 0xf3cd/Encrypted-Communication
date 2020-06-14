@@ -8,7 +8,8 @@ const {
 } = require('./encrypt.js');
 const {
     send,
-    MAX_BLK_NUM
+    MAX_BLK_NUM,
+    processDataClient
 } = require('./dataProcess.js');
 
 const getClientEncrypt = (privKey, passphrase) => {
@@ -24,32 +25,6 @@ const getClientDecrypt = (privKey, passphrase) => {
     };
     return decrypt;
 };
-
-const processDataClient = (head, chunks, decrypt) => {
-    print('\n--------\n');
-    print(`Received All Data of req_id `);
-    print(`${head.req_id}\n`, 'red');
-    print(`Received Data is of Type `);
-    print(`${head.type}\n`, 'red');
-
-    const chunkSize = chunks.size;
-
-    const decryptedData = [];
-    for(let i = 1; i <= chunkSize; i++) {
-        const dataSlice = chunks.get(i);
-        decryptedData.push(decrypt(dataSlice));
-    }
-
-    // console.log(decryptedData);
-    let decryptedDataStr = '';
-    for(let each of decryptedData) {
-        decryptedDataStr += each.toString();
-    }
-    print('Decrypted Data: ', 'yellow');
-    print(`${decryptedDataStr}\n`);
-    print('--------\n\n');
-};
-
 
 const getClient = (privKey, passphrase) => {
     const client = new net.Socket();
@@ -111,7 +86,7 @@ const getClient = (privKey, passphrase) => {
     client.sendFile = (fileDir) => {
         const fileData = fs.readFileSync(fileDir).toString();
         console.log(fileData);
-        send(client, encrypt, fileData, head={type: 'file'});
+        send(client, encrypt, fileData, type='file');
     };
 
     return client;

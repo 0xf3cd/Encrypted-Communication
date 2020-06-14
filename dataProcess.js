@@ -1,7 +1,10 @@
 const { print } = require('./colors.js');
 const { genRandomBytes } = require('./encrypt.js');
+const zlib = require('zlib');
 
 const MAX_BLK_NUM = 65536 / 512 - 1;
+const compAlg = zlib.deflateRawSync;
+const decompAlg = zlib.inflateRawSync;
 
 const splitData = (data, segLen=501) => { // 501 + 11 (11 for padding) == 512
     const dataLen = data.length;
@@ -14,14 +17,25 @@ const splitData = (data, segLen=501) => { // 501 + 11 (11 for padding) == 512
     return slicedData;
 };
 
-const send = (socket, encryptFunc, data, head={type: 'data'}) => {
+const send = (socket, encryptFunc, data, type='data', use_compress=true) => {
     if(!data) {
         data = '\0';
     }
 
-    const slicedData = splitData(data);
+    const head = {
+        type: type,
+        use_compress: use_compress
+    };
+
+    let compressedData = data; // if use_compress is false, then do not compress the data 
+    if(head.use_compress) {
+        compressedData = compAlg(data);
+    }
+
+    const slicedData = splitData(compressedData);
     const slicedNum = slicedData.length;
     let encryptedData = [];
+    // console.log(slicedData[0].length)
 
     if(slicedNum > 1) {
         print(`Data is too long! The data is splited into ${slicedNum} parts.\n`, 'red');
@@ -37,10 +51,12 @@ const send = (socket, encryptFunc, data, head={type: 'data'}) => {
     const reqID = genRandomBytes(32).toString('base64');
 
     print(`Original Data Length: ${data.length}\n`, 'yellow');
+    print(`Compressed Data Length: ${compressedData.length}\n`, 'yellow');
     if(slicedNum <= MAX_BLK_NUM) {
         head.req_id = reqID
         head.blk_num = slicedNum;
         head.origin_data_bytes = data.length;
+        head.compressed_data_bytes = compressedData.length;
         head.all_bytes = (slicedNum + 1) * 512;
         head.use_seg = false;
         head.seg_num = 0;
@@ -60,6 +76,7 @@ const send = (socket, encryptFunc, data, head={type: 'data'}) => {
             head.req_id = reqID
             head.blk_num = segBlkNum;
             head.origin_data_bytes = data.length;
+            head.compressed_data_bytes = compressedData.length;
             head.all_bytes = (segBlkNum + 1) * 512;
             head.use_seg = true;
             head.seg_num = segNum
@@ -82,7 +99,78 @@ const send = (socket, encryptFunc, data, head={type: 'data'}) => {
     print(`All the data has been sent.\n`, 'yellow');
 };
 
+
+const processDataServer = (head, chunks, decrypt) => {
+    print('\n--------\n');
+    print(`Received All Data of req_id `);
+    print(`${head.req_id}\n`, 'red');
+    print(`Received Data is of Type `);
+    print(`${head.type}\n`, 'red');
+
+    const chunkSize = chunks.size;
+
+    const decryptedData = [];
+    for(let i = 1; i <= chunkSize; i++) {
+        const dataSlice = chunks.get(i);
+        decryptedData.push(decrypt(dataSlice));
+    }
+
+    // console.log(decryptedData);
+    // let decryptedDataStr = '';
+    // for(let each of decryptedData) {
+    //     decryptedDataStr += each.toString();
+    // }
+    // if(head.use_deflate) {
+    //     decryptedDataStr = decompAlg(decryptedDataStr);
+    // }
+    let decryptedDataBuf = Buffer.concat(decryptedData);
+    let decryptedDataStr = '';
+    if(head.use_compress) {
+        decryptedDataStr = decompAlg(decryptedDataBuf).toString();
+    } else {
+        decryptedDataStr = decryptedDataBuf.toString();
+    }
+
+    print('Decrypted Data: ', 'yellow');
+    print(`${decryptedDataStr}\n`);
+    print('--------\n\n');
+};
+
+const processDataClient = (head, chunks, decrypt) => {
+    print('\n--------\n');
+    print(`Received All Data of req_id `);
+    print(`${head.req_id}\n`, 'red');
+    print(`Received Data is of Type `);
+    print(`${head.type}\n`, 'red');
+
+    const chunkSize = chunks.size;
+
+    const decryptedData = [];
+    for(let i = 1; i <= chunkSize; i++) {
+        const dataSlice = chunks.get(i);
+        decryptedData.push(decrypt(dataSlice));
+    }
+
+    // let decryptedDataStr = '';
+    // for(let each of decryptedData) {
+    //     decryptedDataStr += each.toString();
+    // }
+    let decryptedDataBuf = Buffer.concat(decryptedData);
+    let decryptedDataStr = '';
+    if(head.use_compress) {
+        decryptedDataStr = decompAlg(decryptedDataBuf).toString();
+    } else {
+        decryptedDataStr = decryptedDataBuf.toString();
+    }
+
+    print('Decrypted Data: ', 'yellow');
+    print(`${decryptedDataStr}\n`);
+    print('--------\n\n');
+};
+
 module.exports = {
     send,
-    MAX_BLK_NUM
+    MAX_BLK_NUM,
+    processDataServer,
+    processDataClient
 };
