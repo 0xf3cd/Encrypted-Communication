@@ -9,7 +9,6 @@ const {
     send,
     MAX_BLK_NUM,
 } = require('./dataProcess.js');
-const cp = require('child_process');
 const zlib = require('zlib');
 
 const getServerEncrypt = (pubKey) => {
@@ -26,17 +25,10 @@ const getServerDecrypt = (pubKey) => {
     return decrypt;
 };
 
-
-const procShell = (shell) => {
-    print(`Execute shell: ${shell}\n\n`, 'green')
-    return cp.execSync(shell);
-};
-
 const procFile = (fileContent) => {
     print('File Content: ', 'yellow');
     print(`${fileContent}\n`);
     print('--------\n\n');
-    return; // do not need to reply any message to client
 };
 
 const processDataServer = (head, chunks, decrypt) => {
@@ -47,7 +39,6 @@ const processDataServer = (head, chunks, decrypt) => {
     print(`${head.type}\n`, 'red');
 
     const processFuncs = {
-        'shell': procShell,
         'file': procFile
     };
 
@@ -70,13 +61,11 @@ const processDataServer = (head, chunks, decrypt) => {
 
     if(processFuncs.hasOwnProperty(msgType)) {
         const func = processFuncs[msgType];
-        const returnToClient = func(decryptedDataStr);
-        return returnToClient;
+        func(decryptedDataStr);
     } else {
         print('Decrypted Data: ', 'yellow');
         print(`${decryptedDataStr}\n`);
         print('--------\n\n');
-        return; // do not need to reply any message to client
     }
 };
 
@@ -86,7 +75,6 @@ const getServer = (pubKey, port) => {
 
     const server = new WebSocket.Server({ port: port});
     server.on('connection', (c, req) => {
-        // let dataReceivedMap = new Map();
         const clientIP = req.socket.remoteAddress;
 
         c.on('close', () => {
@@ -125,9 +113,8 @@ const getServer = (pubKey, port) => {
             }
             
             if((!parsedHead.use_seg) || (parsedHead.seg_num === parsedHead.cur_seg_no)) {
-                const returnToClient = processDataServer(parsedHead, chunks, decrypt);
+                processDataServer(parsedHead, chunks, decrypt);
                 chunkMap.delete(reqID);
-                send(c, encrypt, returnToClient, type='server-reply');
             }
 
             const dataReply = `Server has received the data with length ${d.length} - ${addColor(Date().toString(), 'green')}`;

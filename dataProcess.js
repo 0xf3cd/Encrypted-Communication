@@ -92,9 +92,8 @@ const send = (socket, encryptFunc, data, type='data', use_compress=true) => {
             socket.send(bufToSend); 
         }
     }
-
     
-    print(`All the data has been sent.\n`, 'yellow');
+    print(`All the data has been sent.\n\n`, 'yellow');
 };
 
 module.exports = {

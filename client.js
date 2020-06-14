@@ -25,12 +25,6 @@ const getClientDecrypt = (privKey, passphrase) => {
 };
 
 const processDataClient = (head, chunks, decrypt) => {
-    print('\n--------\n');
-    print(`Received All Data of req_id `);
-    print(`${head.req_id}\n`, 'red');
-    print(`Received Data is of Type `);
-    print(`${head.type}\n`, 'red');
-
     const msgType = head.type;
     const chunkSize = chunks.size;
 
@@ -51,8 +45,13 @@ const processDataClient = (head, chunks, decrypt) => {
     // if the message is the confirmation that the server has received the data，
     // do not output it
     if(msgType !== 'data-confirm') { 
-        print('Decrypted Data: ', 'yellow');
-        print(`${decryptedDataStr}\n`);
+        print('\n--------\n');
+        print(`Received All Data of req_id `);
+        print(`${head.req_id}\n`, 'red');
+        print(`Received Data is of Type `);
+        print(`${head.type}\n`, 'red');
+        print('Decrypted Data: \n', 'yellow');
+        print(`${decryptedDataStr}`);
         print('--------\n\n');
     }
 };
@@ -64,18 +63,18 @@ const getClient = (privKey, passphrase, host, port, emitter) => {
 
     const chunkMap = new Map();
     client.on('message', (d) => {
-        print('\n--------\n');
-        print(`Received encrypted data from server\n`, 'green');
-        print('Encrypted: ', 'yellow');
-        print(`${d.toString('base64')}\n`);
+        // print('\n--------\n');
+        // print(`Received encrypted data from server\n`, 'green');
+        // print('Encrypted: ', 'yellow');
+        // print(`${d.toString('base64')}\n`);
 
         const head = d.slice(0, 512);
         const parsedHead = JSON.parse(decrypt(head));
-        print(`Decrypted Head: `, 'yellow');
-        printSys(parsedHead);
-        print('Actually received data length: ', 'yellow');
-        print(`${d.length}\n`);
-        print('--------\n\n');
+        // print(`Decrypted Head: `, 'yellow');
+        // printSys(parsedHead);
+        // print('Actually received data length: ', 'yellow');
+        // print(`${d.length}\n`);
+        // print('--------\n\n');
 
         const reqID = parsedHead.req_id;
         if(!chunkMap.has(reqID)) {

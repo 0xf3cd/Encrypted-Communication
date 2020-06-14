@@ -68,8 +68,6 @@ if(program.server) {
         } else if(input === 'file') {
             const fileContent = fs.readFileSync('./server.js');
             client.mySend(fileContent, type='file');
-        } else if(input === 'shell') {
-            client.mySend('ls -la', type='shell');
         } else {
             client.mySend(input, type='data');
         }
