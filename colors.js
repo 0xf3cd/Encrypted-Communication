@@ -24,7 +24,12 @@ const print = (str, color='no') => {
    process.stdout.write(addColor(str, color));
 };
 
+const printSys = (str) => {
+    console.log(str);
+};
+
 module.exports = {
     addColor,
-    print
+    print,
+    printSys
 };
