@@ -24,7 +24,7 @@ const getClientDecrypt = (privKey, passphrase) => {
     return decrypt;
 };
 
-const getClient = (privKey, passphrase, host, port) => {
+const getClient = (privKey, passphrase, host, port, emitter) => {
     let client = new WebSocket(`ws://${host}:${port}`);
     const encrypt = getClientEncrypt(privKey, passphrase);
     const decrypt = getClientDecrypt(privKey, passphrase);
@@ -72,12 +72,13 @@ const getClient = (privKey, passphrase, host, port) => {
 
     // reconnect to the server when losing the connection
     client.on('close', () => {
-        print(`Lost the connection to the server!!!!\n`, 'red');
-        print(`Trying to reconnect in 3 seconds! So don't worry!\n`);
-        setTimeout(() => {
-            client.terminate();
-            client = getClient(privKey, passphrase, host, port);
-        }, 3000);
+        // print(`Lost the connection to the server!!!!\n`, 'red');
+        // print(`Trying to reconnect in 3 seconds! So don't worry!\n`);
+        // setTimeout(() => {
+        //     client.terminate();
+        //     client = getClient(privKey, passphrase, host, port);
+        // }, 3000);
+        emitter.emit('client-close');
     });
 
     return client;

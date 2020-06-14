@@ -11,6 +11,7 @@ const {
 } = require('./encrypt.js');
 const readline = require('readline');
 const fs = require('fs');
+const events = require("events");
 
 program
     .version('0.1.0')
@@ -44,7 +45,17 @@ if(program.server) {
     }
 
     const { privKey, passphrase } = loadPrivateKey();
-    const client = getClient(privKey, passphrase, program.ip, program.port);
+    const emitter = new events.EventEmitter();
+    let client = getClient(privKey, passphrase, program.ip, program.port, emitter);
+
+    emitter.addListener('client-close', () => {
+        print(`Lost the connection to the server!!!!\n`, 'red');
+        print(`Trying to reconnect in 3 seconds! So don't worry!\n`);
+        setTimeout(() => {
+            client.terminate();
+            client = getClient(privKey, passphrase, program.ip, program.port, emitter);
+        }, 3000);
+    });
     
     const rl = readline.createInterface({
         input: process.stdin,
