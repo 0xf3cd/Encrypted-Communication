@@ -47,6 +47,8 @@ const getServer = (pubKey) => {
             const parsedHead = JSON.parse(decrypt(head));
             print(`Decrypted Head: `, 'yellow');
             printSys(parsedHead);
+            print('Actually received data length: ', 'yellow');
+            print(`${d.length}\n`);
             print('--------\n\n');
 
             const reqID = parsedHead.req_id;
