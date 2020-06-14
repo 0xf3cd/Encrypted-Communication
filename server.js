@@ -28,7 +28,7 @@ const getServerDecrypt = (pubKey) => {
 
 
 const procShell = (shell) => {
-    print(`Execute shell ${shell}\n`, 'green')
+    print(`Execute shell: ${shell}\n\n`, 'green')
     return cp.execSync(shell);
 };
 
@@ -131,7 +131,7 @@ const getServer = (pubKey, port) => {
             }
 
             const dataReply = `Server has received the data with length ${d.length} - ${addColor(Date().toString(), 'green')}`;
-            send(c, encrypt, dataReply);
+            send(c, encrypt, dataReply, type='data-confirm');
         });
 
         // Say hi to client!

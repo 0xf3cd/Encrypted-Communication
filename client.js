@@ -31,6 +31,7 @@ const processDataClient = (head, chunks, decrypt) => {
     print(`Received Data is of Type `);
     print(`${head.type}\n`, 'red');
 
+    const msgType = head.type;
     const chunkSize = chunks.size;
 
     const decryptedData = [];
@@ -39,10 +40,6 @@ const processDataClient = (head, chunks, decrypt) => {
         decryptedData.push(decrypt(dataSlice));
     }
 
-    // let decryptedDataStr = '';
-    // for(let each of decryptedData) {
-    //     decryptedDataStr += each.toString();
-    // }
     let decryptedDataBuf = Buffer.concat(decryptedData);
     let decryptedDataStr = '';
     if(head.use_compress) {
@@ -51,9 +48,13 @@ const processDataClient = (head, chunks, decrypt) => {
         decryptedDataStr = decryptedDataBuf.toString();
     }
 
-    print('Decrypted Data: ', 'yellow');
-    print(`${decryptedDataStr}\n`);
-    print('--------\n\n');
+    // if the message is the confirmation that the server has received the data，
+    // do not output it
+    if(msgType !== 'data-confirm') { 
+        print('Decrypted Data: ', 'yellow');
+        print(`${decryptedDataStr}\n`);
+        print('--------\n\n');
+    }
 };
 
 const getClient = (privKey, passphrase, host, port, emitter) => {
